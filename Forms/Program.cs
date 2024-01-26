@@ -1,12 +1,11 @@
-namespace Forms
+namespace Forms;
+
+internal static class Program
 {
-    internal static class Program
+    [STAThread]
+    static void Main()
     {
-        [STAThread]
-        static void Main()
-        {
-            ApplicationConfiguration.Initialize();
-            Application.Run();
-        }
+        ApplicationConfiguration.Initialize();
+        Application.Run();
     }
 }
