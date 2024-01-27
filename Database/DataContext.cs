@@ -9,19 +9,18 @@ public class DataContext(DbContextOptions<DataContext> options) : DbContext(opti
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        AssignNameToTablesAndColumns<Employee>(modelBuilder);
+        RenameTablesAndColumns<Employee>(modelBuilder);
     }
 
-    private static void AssignNameToTablesAndColumns<TEntity>(ModelBuilder modelBuilder) where TEntity : BaseEntity
+    private static void RenameTablesAndColumns<TEntity>(ModelBuilder modelBuilder) where TEntity : BaseEntity
     {
         var schema = ConfigureDatabase.Schema;
-        var tableName = ConfigureDatabase.TableNames[typeof(TEntity).Name];
-        var columnNames = ConfigureDatabase.ColumnNames;
+        var tableName = ConfigureDatabase.GetTableName<TEntity>();
+        var columnNames = ConfigureDatabase.GetColumnNames(typeof(TEntity).GetProperties());
 
         modelBuilder.Entity<TEntity>().ToTable(tableName, schema: schema);
-        var properties = typeof(TEntity).GetProperties();
 
-        foreach (var property in properties.Select(p => p).Where(p => columnNames.ContainsKey(p.Name)))
-                modelBuilder.Entity<TEntity>().Property(property.Name).HasColumnName(columnNames[property.Name]);
+        foreach (var pair in columnNames)
+                modelBuilder.Entity<TEntity>().Property(pair.Key).HasColumnName(pair.Value);
     }
 }

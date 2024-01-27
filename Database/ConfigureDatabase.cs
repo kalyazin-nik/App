@@ -1,16 +1,16 @@
-﻿using System.Configuration;
+﻿using System.Reflection;
+using Entities;
 
 namespace Database;
 
-internal static class ConfigureDatabase
+public static class ConfigureDatabase
 {
-    internal readonly static string ConnectionString = ConfigurationManager.ConnectionStrings["postgres"].ConnectionString;
-    internal readonly static string Schema = "company";
-    internal readonly static Dictionary<string, string> TableNames = new()
+    private readonly static string _schema = "company";
+    private readonly static Dictionary<string, string> _tableNames = new()
     {
         { "Employee", "employees" }
     };
-    internal readonly static Dictionary<string, string> ColumnNames = new()
+    private readonly static Dictionary<string, string> _columnNames = new()
     {
         { "Id", "id" },
         { "Post", "post" },
@@ -26,4 +26,19 @@ internal static class ConfigureDatabase
         { "Hobbies", "hobbies" },
         { "CreatedAt", "created_at" }
     };
+
+    internal static string Schema { get { return _schema; } }
+
+    internal static string GetTableName<TEntity>() where TEntity : BaseEntity
+    {
+        return _tableNames[typeof(TEntity).Name];
+    }
+
+    public static Dictionary<string, string> GetColumnNames(PropertyInfo[] properties)
+    {
+        return properties
+            .Select(p => p)
+            .Where(p => _columnNames.ContainsKey(p.Name))
+            .ToDictionary(p => p.Name, p => _columnNames[p.Name]);
+    }
 }

@@ -2,7 +2,7 @@
 
 public class Employee(string post, string lastName, string firstName, string middleName, 
     int age, bool isMarried, string address, string city, string phoneNumber, string mail, 
-    List<string> hobbies, DateTime createdAt) : BaseEntity
+    List<string> hobbies, DateTime createdAt) : BaseEntity(createdAt)
 {
     public int Id { get; set; }
     public string Post { get; set; } = post;
@@ -16,5 +16,4 @@ public class Employee(string post, string lastName, string firstName, string mid
     public string PhoneNumber { get; set; } = phoneNumber;
     public string Mail { get; set; } = mail;
     public List<string> Hobbies { get; set; } = hobbies;
-    public DateTime CreatedAt { get; set; } = createdAt;
 }
