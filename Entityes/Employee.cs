@@ -1,6 +1,6 @@
 ﻿namespace Entities;
 
-public class Employee(string post, string lastName, string firstName, string middleName, 
+public sealed class Employee(string post, string lastName, string firstName, string middleName, 
     int age, bool isMarried, string address, string city, string phoneNumber, string mail, 
     List<string> hobbies, DateTime createdAt) : BaseEntity(createdAt)
 {
