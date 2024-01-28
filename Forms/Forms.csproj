@@ -9,6 +9,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Controller\**" />
+    <Compile Remove="Model\**" />
+    <Compile Remove="View\**" />
+    <EmbeddedResource Remove="Controller\**" />
+    <EmbeddedResource Remove="Model\**" />
+    <EmbeddedResource Remove="View\**" />
+    <None Remove="Controller\**" />
+    <None Remove="Model\**" />
+    <None Remove="View\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="appsettings.json" />
   </ItemGroup>
 
@@ -16,12 +28,6 @@
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controller\" />
-    <Folder Include="Model\" />
-    <Folder Include="View\" />
   </ItemGroup>
 
   <ItemGroup>

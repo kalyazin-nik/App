@@ -28,7 +28,7 @@ internal class DbContextFactory : IDesignTimeDbContextFactory<DataContext>
         return new DataContext(Options);
     }
 
-    internal static DataContext CreateDbContext()
+    internal static DataContext CreateDataContext()
     {
         return new DataContext(Options);
     }

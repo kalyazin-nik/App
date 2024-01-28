@@ -1,44 +1,41 @@
-﻿using System.Reflection;
-using Entities;
+﻿using Entities;
 
 namespace Database;
 
 public static class ConfigureDatabase
 {
+    internal static string Schema { get { return _schema; } }
     private readonly static string _schema = "company";
     private readonly static Dictionary<string, string> _tableNames = new()
     {
         { "Employee", "employees" }
     };
-    private readonly static Dictionary<string, string> _columnNames = new()
+    private readonly static Dictionary<string, EntityInfo> _entityInfo = new()
     {
-        { "Id", "id" },
-        { "Post", "post" },
-        { "LastName", "last_name" },
-        { "FirstName", "first_name" },
-        { "MiddleName", "middle_name" },
-        { "Age", "age" },
-        { "IsMarried", "is_married" },
-        { "Address", "address" },
-        { "City", "city" },
-        { "PhoneNumber", "phone_number" },
-        { "Mail", "mail" },
-        { "Hobbies", "hobbies" },
-        { "CreatedAt", "created_at" }
+        { "Id", new("Id", "id", null) },
+        { "Post", new("Post", "post", "varchar(50)") },
+        { "Surname", new("Surname", "surname", "varchar(20)") },
+        { "Name", new("Name", "name", "varchar(20)") },
+        { "Patronymic", new("Patronymic", "patronymic", "varchar(20)") },
+        { "DateOfBirth", new("DateOfBirth", "date_of_birth", "date") },
+        { "PhoneNumber", new("PhoneNumber", "phone_number", "char(16)") },
+        { "Mail", new("Mail", "mail", "varchar(70)") },
+        { "FamilyStatus", new("FamilyStatus", "family_status", "varchar(20)") },
+        { "Address", new("Address", "address", "text") },
+        { "City", new("City", "city", "varchar(20)") },
+        { "Hobbies", new("Hobbies", "hobbies", "varchar(20)[]") },
+        { "CreatedAt", new("CreatedAt", "created_at", "timestamp") }
     };
-
-    internal static string Schema { get { return _schema; } }
 
     internal static string GetTableName<TEntity>() where TEntity : BaseEntity
     {
         return _tableNames[typeof(TEntity).Name];
     }
 
-    public static Dictionary<string, string> GetColumnNames(PropertyInfo[] properties)
+    internal static IEnumerable<EntityInfo> GetEntityInfo<TEntity>() where TEntity : BaseEntity
     {
-        return properties
-            .Select(p => p)
-            .Where(p => _columnNames.ContainsKey(p.Name))
-            .ToDictionary(p => p.Name, p => _columnNames[p.Name]);
+        foreach (var property in typeof(TEntity).GetProperties())
+            if (_entityInfo.TryGetValue(property.Name, out EntityInfo value))
+                yield return value;
     }
 }
