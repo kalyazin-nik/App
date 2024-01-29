@@ -1,8 +1,8 @@
 ﻿namespace Entities;
 
 public sealed class Employee(string post, string surname, string name, string patronymic,
-    DateTime dateOfBirth, string phoneNumber, string mail, string familyStatus, string address,
-    string city, List<string>? hobbies, DateTime createdAt) : BaseEntity(createdAt)
+    DateTime dateOfBirth, string phoneNumber, string mail, string familyStatus, string city,
+    string address, List<string>? hobbies, DateTime createdAt) : BaseEntity(createdAt)
 {
     public int Id { get; set; }
     public string Post { get; set; } = post;
@@ -13,7 +13,7 @@ public sealed class Employee(string post, string surname, string name, string pa
     public string PhoneNumber { get; set; } = phoneNumber;
     public string Mail { get; set; } = mail;
     public string FamilyStatus { get; set; } = familyStatus;
-    public string Address { get; set; } = address;
     public string City { get; set; } = city;
+    public string Address { get; set; } = address;
     public List<string>? Hobbies { get; set; } = hobbies;
 }

@@ -1,3 +1,5 @@
+using Forms.Forms;
+
 namespace Forms;
 
 public static class Program
