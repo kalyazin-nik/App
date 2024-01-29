@@ -42,6 +42,7 @@ internal class AddNewEmployeeForm : Form
 
     private async Task CustomizeForm()
     {
+        Text = "Добавление в базу данных";
         Size = new Size(600, 820);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -337,29 +338,17 @@ internal class AddNewEmployeeForm : Form
     {
         if (!TryMakeLabelRequiredField())
         {
-            var employee = new Employee(
-                _textBoxes[0].Text,
-                _textBoxes[1].Text,
-                _textBoxes[2].Text,
-                _textBoxes[3].Text,
-                _birthDayBox.Value,
-                _phoneNumberBox.Text,
-                _mailAddressBox.Text,
-                _familyStatusBox.Text,
-                _textBoxes[4].Text,
-                _textBoxAddress.Text,
-                _textBoxHobbies.Text is "" ? null :
+            var employee = new Employee(_textBoxes[0].Text, _textBoxes[1].Text, _textBoxes[2].Text, _textBoxes[3].Text,
+                _birthDayBox.Value, _phoneNumberBox.Text, _mailAddressBox.Text, _familyStatusBox.Text, _textBoxes[4].Text,
+                _textBoxAddress.Text, _textBoxHobbies.Text is "" ? null :
                     _textBoxHobbies.Text.Split(',').Select(s => s.Trim().ToLower()).Where(s => s.Length > 0).ToList(),
                 DateTime.Now);
+
             _dataContext.Employees.Add(employee);
             _dataContext.SaveChanges();
-            MessageBox.Show(
-                "Сотрудник добавлен в базу данных",
-                "Сохранение выполнено",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information,
-                MessageBoxDefaultButton.Button1,
-                MessageBoxOptions.DefaultDesktopOnly);
+
+            MessageBox.Show("Сотрудник добавлен в базу данных", "Сохранение выполнено", MessageBoxButtons.OK,
+                MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, MessageBoxOptions.DefaultDesktopOnly);
 
             Close();
         }
