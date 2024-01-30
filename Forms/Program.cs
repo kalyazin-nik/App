@@ -8,6 +8,6 @@ public static class Program
     static void Main()
     {
         ApplicationConfiguration.Initialize();
-        Application.Run(new AddNewEmployeeForm());
+        Application.Run(new CreateNewEmployeeForm());
     }
 }
