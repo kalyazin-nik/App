@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Microsoft.EntityFrameworkCore;
 using System.ComponentModel;
 using System.Net.Mail;
 using Database;
@@ -10,7 +9,7 @@ namespace Forms.Forms;
 internal class CreateNewEmployeeForm : Form
 {
     private DataContext _dataContext = null!;
-    private Label[] _labels = null!;
+    private List<Label> _labels = null!;
     private ComboBox _post = null!;
     private TextBox[] _textBoxes = null!;
     private DateTimePicker _birthDay = null!;
@@ -20,30 +19,29 @@ internal class CreateNewEmployeeForm : Form
     private TextBox _address = null!;
     private TextBox _hobbies = null!;
     private Button _saveButton = null!;
+    private Stack<int> _errorsCounter;
 
-    public CreateNewEmployeeForm()
+    public CreateNewEmployeeForm(DataContext context)
     {
-        _dataContext = DbContextFactory.CreateDataContext();
+        CustomizeForm();
+        MakeLables();
+        MakePost();
+        MakeTextBoxes();
+        MakeBirthDay();
+        MakePhoneNumber();
+        MakeMailAddress();
+        MakeFamilyStatus();
+        MakeAddress();
+        MakeHobbies();
+        MakeSaveButton();
+
+        _dataContext = context;
+        _errorsCounter = [];
+        for (int i = 0; i < 10; i++)
+            _errorsCounter.Push(1);
     }
 
-    protected override async void OnLoad(EventArgs e)
-    {
-        base.OnLoad(e);
-        await CustomizeForm();
-        await MakeLablesAsync();
-        await MakePostAsync();
-        await MakeTextBoxesAsync();
-        await MakeBirthDayAsync();
-        await MakePhoneNumberAsync();
-        await MakeMailAddressAsync();
-        await MakeFamilyStatusAsync();
-        await MakeAddressAsync();
-        await MakeHobbiesAsync();
-        await MakeSaveButtonAsync();
-        await _dataContext.Employees.LoadAsync();
-    }
-
-    private async Task CustomizeForm()
+    private void CustomizeForm()
     {
         Text = "Добавление в базу данных";
         Size = new Size(600, 820);
@@ -51,11 +49,9 @@ internal class CreateNewEmployeeForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         TopMost = true;
-
-        await Task.CompletedTask;
     }
 
-    private async Task MakeLablesAsync()
+    private void MakeLables()
     {
         var labelSize = new Size(180, 30);
 
@@ -88,14 +84,16 @@ internal class CreateNewEmployeeForm : Form
                 Location = new Point(250, 655),
                 Size = new Size(350, 30),
                 ForeColor = Color.Gray
-            }
+            },
         ];
 
-        Controls.AddRange(_labels);
-        await Task.CompletedTask;
+        for (int i = 0, y = 30; i < 10; i++, y += 50)
+            _labels.Add(new() { Text = "*", Location = new Point(235, y), AutoSize = true, ForeColor = Color.Red });
+
+        Controls.AddRange(_labels.ToArray());
     }
 
-    private async Task MakePostAsync()
+    private void MakePost()
     {
         _post = new()
         {
@@ -108,16 +106,15 @@ internal class CreateNewEmployeeForm : Form
         };
 
         _post.Items.AddRange(GetPositions());
-        _post.Enter += RemoveErrorLabel!;
+        _post.Enter += ErrorLabelToTransparent!;
+        _post.Leave += ErrorLabelToRed!;
 
         Controls.Add(_post);
-        await Task.CompletedTask;
     }
 
-    private async Task MakeTextBoxesAsync()
+    private void MakeTextBoxes()
     {
         var textBoxesSize = new Size(300, 30);
-
         _textBoxes =
         [
             new() { Location = new Point(250, 80), Size = textBoxesSize, TabIndex = 1, AutoSize = false },
@@ -129,14 +126,14 @@ internal class CreateNewEmployeeForm : Form
         foreach (var textBox in _textBoxes)
         {
             textBox.KeyPress += new KeyPressEventHandler(CorrectKeyPress!);
-            textBox.Enter += RemoveErrorLabel!;
+            textBox.Enter += ErrorLabelToTransparent!;
+            textBox.Leave += ErrorLabelToRed!;
         }
 
         Controls.AddRange(_textBoxes);
-        await Task.CompletedTask;
     }
 
-    private async Task MakeBirthDayAsync()
+    private void MakeBirthDay()
     {
         _birthDay = new()
         {
@@ -149,13 +146,13 @@ internal class CreateNewEmployeeForm : Form
             Format = DateTimePickerFormat.Custom
         };
 
-        _birthDay.Enter += RemoveErrorLabel!;
+        _birthDay.Enter += ErrorLabelToTransparent!;
+        _birthDay.Leave += ErrorLabelToRed!;
 
         Controls.Add(_birthDay);
-        await Task.CompletedTask;
     }
 
-    private async Task MakePhoneNumberAsync()
+    private void MakePhoneNumber()
     {
         _phoneNumber = new()
         {
@@ -166,23 +163,23 @@ internal class CreateNewEmployeeForm : Form
             AutoSize = false
         };
 
-        _phoneNumber.Enter += RemoveErrorLabel!;
+        _phoneNumber.Enter += ErrorLabelToTransparent!;
+        _phoneNumber.Leave += CorrectPhoneNumber!;
 
         Controls.Add(_phoneNumber);
-        await Task.CompletedTask;
     }
 
-    private async Task MakeMailAddressAsync()
+    private void MakeMailAddress()
     {
         _mailAddress = new() { Location = new Point(250, 330), Size = new Size(300, 30), TabIndex = 6, AutoSize = false };
 
-        _mailAddress.Enter += RemoveErrorLabel!;
+        _mailAddress.Enter += ErrorLabelToTransparent!;
+        _mailAddress.Leave += CorrectMailAddress!;
 
         Controls.Add(_mailAddress);
-        await Task.CompletedTask;
     }
 
-    private async Task MakeFamilyStatusAsync()
+    private void MakeFamilyStatus()
     {
         _familyStatus = new()
         {
@@ -195,13 +192,13 @@ internal class CreateNewEmployeeForm : Form
         };
 
         _familyStatus.Items.AddRange(["Женат", "Замужем", "Не женат", "Не замужем"]);
-        _familyStatus.Enter += RemoveErrorLabel!;
+        _familyStatus.Enter += ErrorLabelToTransparent!;
+        _familyStatus.Leave += ErrorLabelToRed!;
 
         Controls.Add(_familyStatus);
-        await Task.CompletedTask;
     }
 
-    private async Task MakeAddressAsync()
+    private void MakeAddress()
     {
         _address = new()
         {
@@ -212,13 +209,13 @@ internal class CreateNewEmployeeForm : Form
             TabIndex = 9,
         };
 
-        _address.Enter += RemoveErrorLabel!;
+        _address.Enter += ErrorLabelToTransparent!;
+        _address.Leave += ErrorLabelToRed!;
 
         Controls.Add(_address);
-        await Task.CompletedTask;
     }
 
-    private async Task MakeHobbiesAsync()
+    private void MakeHobbies()
     {
         _hobbies = new()
         {
@@ -230,17 +227,15 @@ internal class CreateNewEmployeeForm : Form
         };
 
         Controls.Add(_hobbies);
-        await Task.CompletedTask;
     }
 
-    private async Task MakeSaveButtonAsync()
+    private void MakeSaveButton()
     {
         _saveButton = new() { Location = new Point(420, 690), Size = new Size(130, 50), Text = "Сохранить" };
 
         Controls.Add(_saveButton);
 
         _saveButton.Click += CreateEmployee!;
-        await Task.CompletedTask;
     }
 
     private void CorrectKeyPress(object sender, EventArgs args)
@@ -256,11 +251,14 @@ internal class CreateNewEmployeeForm : Form
                     (keyPress.KeyChar >= 1072 && keyPress.KeyChar <= 1103) ||
                     keyPress.KeyChar == 1105 || keyPress.KeyChar == 1025)
                     keyPress.KeyChar -= (char)32;
-                else keyPress.KeyChar = '\0';
+                else if(!((keyPress.KeyChar >= 65 && keyPress.KeyChar <= 90) ||
+                    (keyPress.KeyChar >= 1040 && keyPress.KeyChar <= 1071)))
+                    keyPress.KeyChar = '\0';
             }
             else
             {
-                if (!(keyPress.KeyChar == 8 || keyPress.KeyChar == 1105 || keyPress.KeyChar == 1025 ||
+                if (!(keyPress.KeyChar == 8 || keyPress.KeyChar == 15 || 
+                    keyPress.KeyChar == 1105 || keyPress.KeyChar == 1025 ||
                     (keyPress.KeyChar >= 65 && keyPress.KeyChar <= 90) ||
                     (keyPress.KeyChar >= 97 && keyPress.KeyChar <= 122) ||
                     (keyPress.KeyChar >= 1040 && keyPress.KeyChar <= 1071) ||
@@ -270,28 +268,84 @@ internal class CreateNewEmployeeForm : Form
         }
     }
 
-    private void RemoveErrorLabel(object sender, EventArgs args)
+    private async void CorrectPhoneNumber(object sender, EventArgs args)
+    {
+        if (sender is MaskedTextBox phoneNumber)
+            if (phoneNumber.Text.Length < 16)
+            {
+                phoneNumber.Text = "";
+                ErrorLabelToRed(sender, args);
+            }
+
+        await Task.CompletedTask;
+    }
+
+    private async void CorrectMailAddress(object sender, EventArgs args)
+    {
+        if (sender is TextBox mail)
+            try
+            {
+                _ = new MailAddress(mail.Text);
+            }
+            catch (Exception)
+            {
+                mail.Text = "";
+                ErrorLabelToRed(sender, args);
+            }
+
+        await Task.CompletedTask;
+    }
+
+    private async void ErrorLabelToRed(object sender, EventArgs args)
     {
         if (sender is Control control)
+            if (await SwitchErrorColor(control, Color.Red))
+                _errorsCounter.Push(1);
+    }
+
+    private async void ErrorLabelToTransparent(object sender, EventArgs args)
+    {
+        if (sender is Control control)
+            if (await SwitchErrorColor(control, Color.Transparent))
+                _errorsCounter.Pop();
+    }
+
+    private async Task<bool> SwitchErrorColor(Control control, Color color)
+    {
+        if (control.Text == "" || (control is MaskedTextBox && control.Text.Length < 16) ||
+            (control is DateTimePicker birthDay && birthDay.Value.Year > DateTime.Today.Year - 18))
         {
             var point = new Point(control.Location.X - 15, control.Location.Y);
 
             for (int i = 0; i < Controls.Count; i++)
                 if (Controls[i].Location == point)
                 {
-                    Controls.RemoveAt(i);
-                    break;
+                    Controls[i].ForeColor = color;
+                    await Task.CompletedTask;
+                    return true;
                 }
         }
+
+        await Task.CompletedTask;
+        return false;
     }
 
     private void CreateEmployee(object sender, EventArgs args)
     {
-        if (!TryMakeErrorLabelRequiredField())
+        if (_errorsCounter.Count == 0)
         {
-            var employee = new Employee(_textBoxes[0].Text, _textBoxes[1].Text, _textBoxes[2].Text, _textBoxes[3].Text,
-                _birthDay.Value, _phoneNumber.Text, _mailAddress.Text, _familyStatus.Text, _textBoxes[4].Text,
-                _address.Text, _hobbies.Text is "" ? null :
+            var employee = new Employee(
+                _post.Text,
+                _textBoxes[0].Text,
+                _textBoxes[1].Text,
+                _textBoxes[2].Text,
+                _birthDay.Value,
+                _phoneNumber.Text,
+                _mailAddress.Text,
+                _familyStatus.Text,
+                _textBoxes[3].Text,
+                _address.Text,
+                _hobbies.Text is "" ? null :
                     _hobbies.Text.Split(',').Select(s => s.Trim().ToLower()).Where(s => s.Length > 0).ToList(),
                 DateTime.Now);
 
@@ -303,41 +357,8 @@ internal class CreateNewEmployeeForm : Form
 
             Close();
         }
-    }
-
-    private bool TryMakeErrorLabelRequiredField()
-    {
-        var flag = false;
-
-        if (_post.SelectedIndex == -1)
-            flag = TryAddErrorLabel(_familyStatus.Location.X - 15, _familyStatus.Location.Y);
-
-        foreach (var textBox in _textBoxes)
-            if (textBox.Text is "")
-                flag = TryAddErrorLabel(textBox.Location.X - 15, textBox.Location.Y);
-
-        if (_birthDay.Value.Year > DateTime.Today.Year - 18)
-            flag = TryAddErrorLabel(_birthDay.Location.X - 15, _birthDay.Location.Y);
-
-        if (_phoneNumber.Text.Length < 16)
-            flag = TryAddErrorLabel(_phoneNumber.Location.X - 15, _phoneNumber.Location.Y);
-
-        try { _ = new MailAddress(_mailAddress.Text); }
-        catch (Exception) { flag = TryAddErrorLabel(_mailAddress.Location.X - 15, _mailAddress.Location.Y); }
-
-        if (_familyStatus.SelectedIndex == -1)
-            flag = TryAddErrorLabel(_familyStatus.Location.X - 15, _familyStatus.Location.Y);
-
-        if (_address.Text == "")
-            flag = TryAddErrorLabel(_address.Location.X - 15, _address.Location.Y);
-
-        return flag;
-    }
-
-    private bool TryAddErrorLabel(int x, int y)
-    {
-        Controls.Add(new Label() { Text = "*", Location = new Point(x, y), ForeColor = Color.Red });
-        return true;
+        else MessageBox.Show("Остались пустые поля обязательные к заполнению", "Ошибка", MessageBoxButtons.OK,
+                MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, MessageBoxOptions.DefaultDesktopOnly);
     }
 
     private static string[] GetPositions()
@@ -355,7 +376,6 @@ internal class CreateNewEmployeeForm : Form
     protected override void OnClosing(CancelEventArgs e)
     {
         base.OnClosing(e);
-        _dataContext?.Dispose();
         _dataContext = null!;
     }
 }
