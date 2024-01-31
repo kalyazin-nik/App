@@ -3,12 +3,14 @@ using System.ComponentModel;
 using System.Net.Mail;
 using Database;
 using Entities;
+using System.Windows.Forms;
 
 namespace Forms.Forms;
 
 internal class CreateNewEmployeeForm : Form
 {
     private DataContext _dataContext = null!;
+    private Panel _panel = null!;
     private List<Label> _labels = null!;
     private ComboBox _post = null!;
     private TextBox[] _textBoxes = null!;
@@ -24,6 +26,7 @@ internal class CreateNewEmployeeForm : Form
     public CreateNewEmployeeForm(DataContext context)
     {
         CustomizeForm();
+        MakePanel();
         MakeLables();
         MakePost();
         MakeTextBoxes();
@@ -41,18 +44,21 @@ internal class CreateNewEmployeeForm : Form
             _errorsCounter.Push(1);
     }
 
-    protected override void OnLoad(EventArgs e)
-    {
-        base.OnLoad(e);
-    }
     private void CustomizeForm()
     {
         Text = "Добавление в базу данных";
-        Size = new Size(600, 820);
+        Size = new Size(600, 860);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
         TopMost = true;
+    }
+
+    private void MakePanel()
+    {
+        _panel = new() { Location = new(0, 0), Size = new(600, 710), BackColor = Color.White };
+        _panel.Paint += new PaintEventHandler(DrawDividingLine!);
+        Controls.Add(_panel);
     }
 
     private void MakeLables()
@@ -72,7 +78,6 @@ internal class CreateNewEmployeeForm : Form
             new() { Text = "Город", Location = new Point(30, 430), Size = labelSize },
             new() { Text = "Адрес", Location = new Point(30, 480), Size = labelSize },
             new() { Text = "Увлечения", Location = new Point(30, 580), Size = labelSize },
-            new() { Location = new Point(220, 20), Size = new Size(1, 660), AutoSize = false, BorderStyle = BorderStyle.FixedSingle },
             new()
             {
                 Text = "Пример: ул Ленина, д 52, кв 67",
@@ -92,15 +97,17 @@ internal class CreateNewEmployeeForm : Form
         ];
 
         for (int i = 0, y = 30; i < 10; i++, y += 50)
-            _labels.Add(new() { Text = "*", Location = new Point(235, y), AutoSize = true, ForeColor = Color.Red });
+            _labels.Add(
+                new() { Text = "*", Name = $"error {i}", Location = new Point(235, y), AutoSize = true, ForeColor = Color.Red });
 
-        Controls.AddRange(_labels.ToArray());
+        _panel.Controls.AddRange(_labels.ToArray());
     }
 
     private void MakePost()
     {
         _post = new()
         {
+            Name = "0",
             Location = new Point(250, 30),
             Size = new Size(300, 30),
             DropDownWidth = 300,
@@ -113,7 +120,7 @@ internal class CreateNewEmployeeForm : Form
         _post.Enter += ErrorLabelToTransparent!;
         _post.Leave += ErrorLabelToRed!;
 
-        Controls.Add(_post);
+        _panel.Controls.Add(_post);
     }
 
     private void MakeTextBoxes()
@@ -121,10 +128,10 @@ internal class CreateNewEmployeeForm : Form
         var textBoxesSize = new Size(300, 30);
         _textBoxes =
         [
-            new() { Location = new Point(250, 80), Size = textBoxesSize, TabIndex = 1, AutoSize = false },
-            new() { Location = new Point(250, 130), Size = textBoxesSize, TabIndex = 2, AutoSize = false },
-            new() { Location = new Point(250, 180), Size = textBoxesSize, TabIndex = 3, AutoSize = false },
-            new() { Location = new Point(250, 430), Size = textBoxesSize, TabIndex = 8, AutoSize = false },
+            new() { Name = "1", Location = new Point(250, 80), Size = textBoxesSize, TabIndex = 1, AutoSize = false },
+            new() { Name = "2", Location = new Point(250, 130), Size = textBoxesSize, TabIndex = 2, AutoSize = false },
+            new() { Name = "3", Location = new Point(250, 180), Size = textBoxesSize, TabIndex = 3, AutoSize = false },
+            new() { Name = "8", Location = new Point(250, 430), Size = textBoxesSize, TabIndex = 8, AutoSize = false },
         ];
 
         foreach (var textBox in _textBoxes)
@@ -134,13 +141,14 @@ internal class CreateNewEmployeeForm : Form
             textBox.Leave += ErrorLabelToRed!;
         }
 
-        Controls.AddRange(_textBoxes);
+        _panel.Controls.AddRange(_textBoxes);
     }
 
     private void MakeBirthDay()
     {
         _birthDay = new()
         {
+            Name = "4",
             Location = new Point(250, 230),
             Size = new Size(300, 30),
             TabIndex = 4,
@@ -151,15 +159,16 @@ internal class CreateNewEmployeeForm : Form
         };
 
         _birthDay.Enter += ErrorLabelToTransparent!;
-        _birthDay.Leave += ErrorLabelToRed!;
+        _birthDay.Leave += CorrectBirthDay!;
 
-        Controls.Add(_birthDay);
+        _panel.Controls.Add(_birthDay);
     }
 
     private void MakePhoneNumber()
     {
         _phoneNumber = new()
         {
+            Name = "5",
             Location = new Point(250, 280),
             Size = new Size(300, 30),
             Mask = "+7(000)000-00-00",
@@ -170,23 +179,24 @@ internal class CreateNewEmployeeForm : Form
         _phoneNumber.Enter += ErrorLabelToTransparent!;
         _phoneNumber.Leave += CorrectPhoneNumber!;
 
-        Controls.Add(_phoneNumber);
+        _panel.Controls.Add(_phoneNumber);
     }
 
     private void MakeMailAddress()
     {
-        _mailAddress = new() { Location = new Point(250, 330), Size = new Size(300, 30), TabIndex = 6, AutoSize = false };
+        _mailAddress = new() { Name = "6", Location = new Point(250, 330), Size = new Size(300, 30), TabIndex = 6, AutoSize = false };
 
         _mailAddress.Enter += ErrorLabelToTransparent!;
         _mailAddress.Leave += CorrectMailAddress!;
 
-        Controls.Add(_mailAddress);
+        _panel.Controls.Add(_mailAddress);
     }
 
     private void MakeFamilyStatus()
     {
         _familyStatus = new()
         {
+            Name = "7",
             Location = new Point(250, 380),
             Size = new Size(300, 30),
             DropDownWidth = 300,
@@ -199,13 +209,14 @@ internal class CreateNewEmployeeForm : Form
         _familyStatus.Enter += ErrorLabelToTransparent!;
         _familyStatus.Leave += ErrorLabelToRed!;
 
-        Controls.Add(_familyStatus);
+        _panel.Controls.Add(_familyStatus);
     }
 
     private void MakeAddress()
     {
         _address = new()
         {
+            Name = "9",
             Location = new Point(250, 480),
             Size = new Size(300, 70),
             Multiline = true,
@@ -216,7 +227,7 @@ internal class CreateNewEmployeeForm : Form
         _address.Enter += ErrorLabelToTransparent!;
         _address.Leave += ErrorLabelToRed!;
 
-        Controls.Add(_address);
+        _panel.Controls.Add(_address);
     }
 
     private void MakeHobbies()
@@ -230,16 +241,22 @@ internal class CreateNewEmployeeForm : Form
             TabIndex = 10
         };
 
-        Controls.Add(_hobbies);
+        _panel.Controls.Add(_hobbies);
     }
 
     private void MakeSaveButton()
     {
-        _saveButton = new() { Location = new Point(420, 690), Size = new Size(130, 50), Text = "Сохранить" };
-
-        Controls.Add(_saveButton);
+        _saveButton = new() { Location = new Point(400, 735), Size = new Size(130, 50), Text = "Сохранить" };
 
         _saveButton.Click += CreateEmployee!;
+
+        Controls.Add(_saveButton);
+    }
+
+    private void DrawDividingLine(object sender, PaintEventArgs e)
+    {
+        e.Graphics.DrawLine(new Pen(Color.LightGray, 2), new Point(220, 20), new Point(220, 670));
+        e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
     }
 
     private void CorrectKeyPress(object sender, EventArgs args)
@@ -255,13 +272,13 @@ internal class CreateNewEmployeeForm : Form
                     (keyPress.KeyChar >= 1072 && keyPress.KeyChar <= 1103) ||
                     keyPress.KeyChar == 1105 || keyPress.KeyChar == 1025)
                     keyPress.KeyChar -= (char)32;
-                else if(!((keyPress.KeyChar >= 65 && keyPress.KeyChar <= 90) ||
+                else if (!((keyPress.KeyChar >= 65 && keyPress.KeyChar <= 90) ||
                     (keyPress.KeyChar >= 1040 && keyPress.KeyChar <= 1071)))
                     keyPress.KeyChar = '\0';
             }
             else
             {
-                if (!(keyPress.KeyChar == 8 || keyPress.KeyChar == 15 || 
+                if (!(keyPress.KeyChar == 8 || keyPress.KeyChar == 15 ||
                     keyPress.KeyChar == 1105 || keyPress.KeyChar == 1025 ||
                     (keyPress.KeyChar >= 65 && keyPress.KeyChar <= 90) ||
                     (keyPress.KeyChar >= 97 && keyPress.KeyChar <= 122) ||
@@ -269,6 +286,18 @@ internal class CreateNewEmployeeForm : Form
                     (keyPress.KeyChar >= 1072 && keyPress.KeyChar <= 1103)))
                     keyPress.KeyChar = '\0';
             }
+        }
+    }
+
+    private async void CorrectBirthDay(object sender, EventArgs args)
+    {
+        if (sender is DateTimePicker dateTimePicker && dateTimePicker.Value is DateTime birthDay)
+        {
+            var today = DateTime.Today;
+            var age = today.Year - birthDay.Year;
+            if (birthDay.Date > today.AddYears(-age)) age--;
+            if (age < 18) ErrorLabelToRed(sender, args);
+            await Task.CompletedTask;
         }
     }
 
@@ -303,31 +332,24 @@ internal class CreateNewEmployeeForm : Form
     private async void ErrorLabelToRed(object sender, EventArgs args)
     {
         if (sender is Control control)
-            if (await SwitchErrorColor(control, Color.Red))
+            if (await SwitchErrorColor(control, Color.Red, control.Name))
                 _errorsCounter.Push(1);
     }
 
     private async void ErrorLabelToTransparent(object sender, EventArgs args)
     {
         if (sender is Control control)
-            if (await SwitchErrorColor(control, Color.Transparent))
+            if (await SwitchErrorColor(control, Color.Transparent, control.Name))
                 _errorsCounter.Pop();
     }
 
-    private async Task<bool> SwitchErrorColor(Control control, Color color)
+    private async Task<bool> SwitchErrorColor(Control control, Color color, string name)
     {
-        if (control.Text == "" || (control is MaskedTextBox && control.Text.Length < 16) ||
-            (control is DateTimePicker birthDay && birthDay.Value.Year > DateTime.Today.Year - 18))
+        if (control.Text == "" || (control is MaskedTextBox && control.Text.Length < 16))
         {
-            var point = new Point(control.Location.X - 15, control.Location.Y);
-
-            for (int i = 0; i < Controls.Count; i++)
-                if (Controls[i].Location == point)
-                {
-                    Controls[i].ForeColor = color;
-                    await Task.CompletedTask;
-                    return true;
-                }
+            _panel.Controls[$"error {name}"]!.ForeColor = color;
+            await Task.CompletedTask;
+            return true;
         }
 
         await Task.CompletedTask;
@@ -343,7 +365,7 @@ internal class CreateNewEmployeeForm : Form
                 _textBoxes[0].Text,
                 _textBoxes[1].Text,
                 _textBoxes[2].Text,
-                _birthDay.Value,
+                _birthDay.Value.Date,
                 _phoneNumber.Text,
                 _mailAddress.Text,
                 _familyStatus.Text,
