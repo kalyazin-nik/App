@@ -41,6 +41,10 @@ internal class CreateNewEmployeeForm : Form
             _errorsCounter.Push(1);
     }
 
+    protected override void OnLoad(EventArgs e)
+    {
+        base.OnLoad(e);
+    }
     private void CustomizeForm()
     {
         Text = "Добавление в базу данных";
