@@ -3,12 +3,16 @@ using System.ComponentModel;
 using System.Net.Mail;
 using Database;
 using Entities;
-using System.Windows.Forms;
 
 namespace Forms.Forms;
 
 internal class CreateNewEmployeeForm : Form
 {
+    private const int BOX_COUNT = 10;
+    private const int MIN_AGE_EMPLOYEE = 18;
+    private const int PHONE_NUMBER_LENGTH = 16;
+    private const int STRING_MAX_LENGTH = 50;
+
     private DataContext _dataContext = null!;
     private Panel _panel = null!;
     private List<Label> _labels = null!;
@@ -40,7 +44,7 @@ internal class CreateNewEmployeeForm : Form
 
         _dataContext = context;
         _errorsCounter = [];
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < BOX_COUNT; i++)
             _errorsCounter.Push(1);
     }
 
@@ -118,7 +122,7 @@ internal class CreateNewEmployeeForm : Form
 
         _post.Items.AddRange(GetPositions());
         _post.Enter += ErrorLabelToTransparent!;
-        _post.Leave += ErrorLabelToRed!;
+        _post.Leave += CorrectComboBox!;
 
         _panel.Controls.Add(_post);
     }
@@ -138,9 +142,20 @@ internal class CreateNewEmployeeForm : Form
         {
             textBox.KeyPress += new KeyPressEventHandler(CorrectKeyPress!);
             textBox.Enter += ErrorLabelToTransparent!;
-            textBox.Leave += ErrorLabelToRed!;
+            textBox.Leave += CorrectTextBox!;
         }
 
+        _textBoxes[3].KeyPress -= new KeyPressEventHandler(CorrectKeyPress!);
+        _textBoxes[3].KeyPress += (sender, args) =>
+        {
+            if (sender is TextBox textBox && args is KeyPressEventArgs keyPress)
+            {
+                if (textBox.Text.Length == 0 || 
+                textBox.Text.Length == STRING_MAX_LENGTH || 
+                !(keyPress.KeyChar == 32 || keyPress.KeyChar == 45))
+                    CorrectKeyPress(sender, args);
+            }
+        };
         _panel.Controls.AddRange(_textBoxes);
     }
 
@@ -176,6 +191,7 @@ internal class CreateNewEmployeeForm : Form
             AutoSize = false
         };
 
+        _phoneNumber.MouseClick += (sender, args) => { _phoneNumber.SelectionStart = 3; };
         _phoneNumber.Enter += ErrorLabelToTransparent!;
         _phoneNumber.Leave += CorrectPhoneNumber!;
 
@@ -207,7 +223,7 @@ internal class CreateNewEmployeeForm : Form
 
         _familyStatus.Items.AddRange(["Женат", "Замужем", "Не женат", "Не замужем"]);
         _familyStatus.Enter += ErrorLabelToTransparent!;
-        _familyStatus.Leave += ErrorLabelToRed!;
+        _familyStatus.Leave += CorrectComboBox!;
 
         _panel.Controls.Add(_familyStatus);
     }
@@ -225,7 +241,7 @@ internal class CreateNewEmployeeForm : Form
         };
 
         _address.Enter += ErrorLabelToTransparent!;
-        _address.Leave += ErrorLabelToRed!;
+        _address.Leave += CorrectTextBox!;
 
         _panel.Controls.Add(_address);
     }
@@ -253,40 +269,64 @@ internal class CreateNewEmployeeForm : Form
         Controls.Add(_saveButton);
     }
 
-    private void DrawDividingLine(object sender, PaintEventArgs e)
+    private void DrawDividingLine(object sender, PaintEventArgs args)
     {
-        e.Graphics.DrawLine(new Pen(Color.LightGray, 2), new Point(220, 20), new Point(220, 670));
-        e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+        args.Graphics.DrawLine(new Pen(Color.LightGray, 2), new Point(220, 20), new Point(220, 670));
+        args.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
     }
 
     private void CorrectKeyPress(object sender, EventArgs args)
     {
-        var textBox = sender as TextBox;
-        var keyPress = args as KeyPressEventArgs;
-
-        if (textBox is not null && keyPress is not null)
+        if (sender is TextBox textBox && args is KeyPressEventArgs keyPress)
         {
             if (textBox.Text.Length == 0)
             {
                 if ((keyPress.KeyChar >= 97 && keyPress.KeyChar <= 122) ||
                     (keyPress.KeyChar >= 1072 && keyPress.KeyChar <= 1103) ||
                     keyPress.KeyChar == 1105 || keyPress.KeyChar == 1025)
+                {
                     keyPress.KeyChar -= (char)32;
+                }
                 else if (!((keyPress.KeyChar >= 65 && keyPress.KeyChar <= 90) ||
                     (keyPress.KeyChar >= 1040 && keyPress.KeyChar <= 1071)))
+                {
                     keyPress.KeyChar = '\0';
+                }
+                
             }
             else
             {
-                if (!(keyPress.KeyChar == 8 || keyPress.KeyChar == 15 ||
+                if(textBox.Text.Length == STRING_MAX_LENGTH)
+                {
+                    keyPress.KeyChar = (char)8;
+                }
+                else if (!(keyPress.KeyChar == 8 || keyPress.KeyChar == 15 ||
                     keyPress.KeyChar == 1105 || keyPress.KeyChar == 1025 ||
                     (keyPress.KeyChar >= 65 && keyPress.KeyChar <= 90) ||
                     (keyPress.KeyChar >= 97 && keyPress.KeyChar <= 122) ||
                     (keyPress.KeyChar >= 1040 && keyPress.KeyChar <= 1071) ||
                     (keyPress.KeyChar >= 1072 && keyPress.KeyChar <= 1103)))
+                {
                     keyPress.KeyChar = '\0';
+                }
             }
         }
+    }
+
+    private async void CorrectComboBox(object sender, EventArgs args)
+    {
+        if (sender is ComboBox comboBox && comboBox.SelectedIndex == -1)
+            ErrorLabelToRed(sender, args);
+
+        await Task.CompletedTask;
+    }
+
+    private async void CorrectTextBox(object sender, EventArgs args)
+    {
+        if (sender is TextBox textBox && textBox.Text.Length == 0)
+            ErrorLabelToRed(sender, args);
+
+        await Task.CompletedTask;
     }
 
     private async void CorrectBirthDay(object sender, EventArgs args)
@@ -296,7 +336,7 @@ internal class CreateNewEmployeeForm : Form
             var today = DateTime.Today;
             var age = today.Year - birthDay.Year;
             if (birthDay.Date > today.AddYears(-age)) age--;
-            if (age < 18) ErrorLabelToRed(sender, args);
+            if (age < MIN_AGE_EMPLOYEE) ErrorLabelToRed(sender, args);
             await Task.CompletedTask;
         }
     }
@@ -304,7 +344,7 @@ internal class CreateNewEmployeeForm : Form
     private async void CorrectPhoneNumber(object sender, EventArgs args)
     {
         if (sender is MaskedTextBox phoneNumber)
-            if (phoneNumber.Text.Length < 16)
+            if (phoneNumber.Text.Length < PHONE_NUMBER_LENGTH)
             {
                 phoneNumber.Text = "";
                 ErrorLabelToRed(sender, args);
@@ -332,28 +372,25 @@ internal class CreateNewEmployeeForm : Form
     private async void ErrorLabelToRed(object sender, EventArgs args)
     {
         if (sender is Control control)
-            if (await SwitchErrorColor(control, Color.Red, control.Name))
-                _errorsCounter.Push(1);
+        {
+            await SwitchErrorColor(Color.Red, control.Name);
+            _errorsCounter.Push(1);
+        }
     }
 
     private async void ErrorLabelToTransparent(object sender, EventArgs args)
     {
-        if (sender is Control control)
-            if (await SwitchErrorColor(control, Color.Transparent, control.Name))
-                _errorsCounter.Pop();
+        if (sender is Control control && _panel.Controls[$"error {control.Name}"]!.ForeColor == Color.Red)
+        {
+            await SwitchErrorColor(Color.Transparent, control.Name);
+            _errorsCounter.Pop();
+        }
     }
 
-    private async Task<bool> SwitchErrorColor(Control control, Color color, string name)
+    private async Task SwitchErrorColor(Color color, string name)
     {
-        if (control.Text == "" || (control is MaskedTextBox && control.Text.Length < 16))
-        {
-            _panel.Controls[$"error {name}"]!.ForeColor = color;
-            await Task.CompletedTask;
-            return true;
-        }
-
+        _panel.Controls[$"error {name}"]!.ForeColor = color;
         await Task.CompletedTask;
-        return false;
     }
 
     private void CreateEmployee(object sender, EventArgs args)
@@ -372,7 +409,11 @@ internal class CreateNewEmployeeForm : Form
                 _textBoxes[3].Text,
                 _address.Text,
                 _hobbies.Text is "" ? null :
-                    _hobbies.Text.Split(',').Select(s => s.Trim().ToLower()).Where(s => s.Length > 0).ToList(),
+                    _hobbies.Text
+                        .Split(',')
+                        .Select(s => s.Trim().ToLower())
+                        .Where(s => s.Length > 0 && s.Length <= STRING_MAX_LENGTH)
+                        .ToList(),
                 DateTime.Now);
 
             _dataContext.Employees.Add(employee);
