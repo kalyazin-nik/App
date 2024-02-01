@@ -1,12 +1,13 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System.ComponentModel;
 using System.Net.Mail;
+using System.Text;
 using Database;
 using Entities;
 
 namespace Forms.Forms;
 
-internal class CreateNewEmployeeForm : Form
+internal class CreateUpdateEmployeeForm : Form
 {
     private const int BOX_COUNT = 10;
     private const int MIN_AGE_EMPLOYEE = 18;
@@ -14,6 +15,8 @@ internal class CreateNewEmployeeForm : Form
     private const int STRING_MAX_LENGTH = 50;
 
     private DataContext _dataContext = null!;
+    private Employee? _employee;
+    private readonly bool _isCreate;
     private Panel _panel = null!;
     private List<Label> _labels = null!;
     private ComboBox _post = null!;
@@ -25,10 +28,29 @@ internal class CreateNewEmployeeForm : Form
     private TextBox _address = null!;
     private TextBox _hobbies = null!;
     private Button _saveButton = null!;
-    private Stack<int> _errorsCounter;
+    private Stack<int> _errorsCounter = null!;
 
-    public CreateNewEmployeeForm(DataContext context)
+    public CreateUpdateEmployeeForm(DataContext context)
     {
+        _dataContext = context;
+        _isCreate = true;
+
+        _errorsCounter = [];
+        for (int i = 0; i < BOX_COUNT; i++)
+            _errorsCounter.Push(1);
+    }
+
+    public CreateUpdateEmployeeForm(DataContext context, Employee employee)
+    {
+        _dataContext = context;
+        _employee = employee;
+        _errorsCounter = [];
+        _isCreate = false;
+    }
+
+    protected override void OnLoad(EventArgs e)
+    {
+        base.OnLoad(e);
         CustomizeForm();
         MakePanel();
         MakeLables();
@@ -41,17 +63,13 @@ internal class CreateNewEmployeeForm : Form
         MakeAddress();
         MakeHobbies();
         MakeSaveButton();
-
-        _dataContext = context;
-        _errorsCounter = [];
-        for (int i = 0; i < BOX_COUNT; i++)
-            _errorsCounter.Push(1);
+        if (!_isCreate) FillForm();
     }
 
     private void CustomizeForm()
     {
         Text = "Добавление в базу данных";
-        Size = new Size(600, 860);
+        Size = new (600, 860);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
@@ -71,38 +89,44 @@ internal class CreateNewEmployeeForm : Form
 
         _labels =
         [
-            new() { Text = "Занимаемая должность", Location = new Point(30, 30), Size = labelSize },
-            new() { Text = "Фамилия", Location = new Point(30, 80), Size = labelSize },
-            new() { Text = "Имя", Location = new Point(30, 130), Size = labelSize },
-            new() { Text = "Отчество", Location = new Point(30, 180), Size = labelSize },
-            new() { Text = "Дата рождения", Location = new Point(30, 230), Size = labelSize },
-            new() { Text = "Телефонный номер", Location = new Point(30, 280), Size = labelSize },
-            new() { Text = "Электронная почта", Location = new Point(30, 330), Size = labelSize },
-            new() { Text = "Семейное положение", Location = new Point(30, 380), Size = labelSize },
-            new() { Text = "Город", Location = new Point(30, 430), Size = labelSize },
-            new() { Text = "Адрес", Location = new Point(30, 480), Size = labelSize },
-            new() { Text = "Увлечения", Location = new Point(30, 580), Size = labelSize },
+            new() { Text = "Занимаемая должность", Location = new(30, 30), Size = labelSize },
+            new() { Text = "Фамилия", Location = new(30, 80), Size = labelSize },
+            new() { Text = "Имя", Location = new(30, 130), Size = labelSize },
+            new() { Text = "Отчество", Location = new(30, 180), Size = labelSize },
+            new() { Text = "Дата рождения", Location = new(30, 230), Size = labelSize },
+            new() { Text = "Телефонный номер", Location = new(30, 280), Size = labelSize },
+            new() { Text = "Электронная почта", Location = new(30, 330), Size = labelSize },
+            new() { Text = "Семейное положение", Location = new(30, 380), Size = labelSize },
+            new() { Text = "Город", Location = new(30, 430), Size = labelSize },
+            new() { Text = "Адрес", Location = new(30, 480), Size = labelSize },
+            new() { Text = "Увлечения", Location = new(30, 580), Size = labelSize },
             new()
             {
                 Text = "Пример: ул Ленина, д 52, кв 67",
-                Font = new Font("Tahoma", 8, FontStyle.Regular),
-                Location = new Point(250, 555),
-                Size = new Size(350, 30),
+                Font = new("Tahoma", 8, FontStyle.Regular),
+                Location = new(250, 555),
+                Size = new(350, 30),
                 ForeColor = Color.Gray
             },
             new()
             {
                 Text = "Перечисления выполнять через запятую",
-                Font = new Font("Tahoma", 8, FontStyle.Regular),
-                Location = new Point(250, 655),
-                Size = new Size(350, 30),
+                Font = new("Tahoma", 8, FontStyle.Regular),
+                Location = new(250, 655),
+                Size = new(350, 30),
                 ForeColor = Color.Gray
             },
         ];
 
         for (int i = 0, y = 30; i < 10; i++, y += 50)
-            _labels.Add(
-                new() { Text = "*", Name = $"error {i}", Location = new Point(235, y), AutoSize = true, ForeColor = Color.Red });
+            _labels.Add(new() 
+            { 
+                Text = "*", 
+                Name = $"error {i}", 
+                Location = new(235, y), 
+                AutoSize = true, 
+                ForeColor = _isCreate ? Color.Red : Color.Transparent 
+            });
 
         _panel.Controls.AddRange(_labels.ToArray());
     }
@@ -112,8 +136,8 @@ internal class CreateNewEmployeeForm : Form
         _post = new()
         {
             Name = "0",
-            Location = new Point(250, 30),
-            Size = new Size(300, 30),
+            Location = new(250, 30),
+            Size = new(300, 30),
             DropDownWidth = 300,
             DropDownStyle = ComboBoxStyle.DropDownList,
             TabIndex = 0,
@@ -132,10 +156,10 @@ internal class CreateNewEmployeeForm : Form
         var textBoxesSize = new Size(300, 30);
         _textBoxes =
         [
-            new() { Name = "1", Location = new Point(250, 80), Size = textBoxesSize, TabIndex = 1, AutoSize = false },
-            new() { Name = "2", Location = new Point(250, 130), Size = textBoxesSize, TabIndex = 2, AutoSize = false },
-            new() { Name = "3", Location = new Point(250, 180), Size = textBoxesSize, TabIndex = 3, AutoSize = false },
-            new() { Name = "8", Location = new Point(250, 430), Size = textBoxesSize, TabIndex = 8, AutoSize = false },
+            new() { Name = "1", Location = new(250, 80), Size = textBoxesSize, TabIndex = 1, AutoSize = false },
+            new() { Name = "2", Location = new(250, 130), Size = textBoxesSize, TabIndex = 2, AutoSize = false },
+            new() { Name = "3", Location = new(250, 180), Size = textBoxesSize, TabIndex = 3, AutoSize = false },
+            new() { Name = "8", Location = new(250, 430), Size = textBoxesSize, TabIndex = 8, AutoSize = false },
         ];
 
         foreach (var textBox in _textBoxes)
@@ -150,8 +174,8 @@ internal class CreateNewEmployeeForm : Form
         {
             if (sender is TextBox textBox && args is KeyPressEventArgs keyPress)
             {
-                if (textBox.Text.Length == 0 || 
-                textBox.Text.Length == STRING_MAX_LENGTH || 
+                if (textBox.Text.Length == 0 ||
+                textBox.Text.Length == STRING_MAX_LENGTH ||
                 !(keyPress.KeyChar == 32 || keyPress.KeyChar == 45))
                     CorrectKeyPress(sender, args);
             }
@@ -164,11 +188,11 @@ internal class CreateNewEmployeeForm : Form
         _birthDay = new()
         {
             Name = "4",
-            Location = new Point(250, 230),
-            Size = new Size(300, 30),
+            Location = new(250, 230),
+            Size = new(300, 30),
             TabIndex = 4,
             AutoSize = false,
-            MinDate = new DateTime(1950, 01, 01),
+            MinDate = new(1950, 01, 01),
             CustomFormat = "dd MMMM yyyy",
             Format = DateTimePickerFormat.Custom
         };
@@ -184,8 +208,8 @@ internal class CreateNewEmployeeForm : Form
         _phoneNumber = new()
         {
             Name = "5",
-            Location = new Point(250, 280),
-            Size = new Size(300, 30),
+            Location = new(250, 280),
+            Size = new(300, 30),
             Mask = "+7(000)000-00-00",
             TabIndex = 5,
             AutoSize = false
@@ -200,7 +224,7 @@ internal class CreateNewEmployeeForm : Form
 
     private void MakeMailAddress()
     {
-        _mailAddress = new() { Name = "6", Location = new Point(250, 330), Size = new Size(300, 30), TabIndex = 6, AutoSize = false };
+        _mailAddress = new() { Name = "6", Location = new(250, 330), Size = new(300, 30), TabIndex = 6, AutoSize = false };
 
         _mailAddress.Enter += ErrorLabelToTransparent!;
         _mailAddress.Leave += CorrectMailAddress!;
@@ -213,8 +237,8 @@ internal class CreateNewEmployeeForm : Form
         _familyStatus = new()
         {
             Name = "7",
-            Location = new Point(250, 380),
-            Size = new Size(300, 30),
+            Location = new(250, 380),
+            Size = new(300, 30),
             DropDownWidth = 300,
             DropDownStyle = ComboBoxStyle.DropDownList,
             TabIndex = 7,
@@ -233,8 +257,8 @@ internal class CreateNewEmployeeForm : Form
         _address = new()
         {
             Name = "9",
-            Location = new Point(250, 480),
-            Size = new Size(300, 70),
+            Location = new(250, 480),
+            Size = new(300, 70),
             Multiline = true,
             ScrollBars = ScrollBars.Vertical,
             TabIndex = 9,
@@ -250,8 +274,8 @@ internal class CreateNewEmployeeForm : Form
     {
         _hobbies = new()
         {
-            Location = new Point(250, 580),
-            Size = new Size(300, 70),
+            Location = new(250, 580),
+            Size = new(300, 70),
             Multiline = true,
             ScrollBars = ScrollBars.Vertical,
             TabIndex = 10
@@ -262,17 +286,46 @@ internal class CreateNewEmployeeForm : Form
 
     private void MakeSaveButton()
     {
-        _saveButton = new() { Location = new Point(400, 735), Size = new Size(130, 50), Text = "Сохранить" };
+        _saveButton = new() { Location = new(400, 735), Size = new(130, 50), Text = "Сохранить" };
 
-        _saveButton.Click += CreateEmployee!;
+        _saveButton.Click += SaveEmployee!;
 
         Controls.Add(_saveButton);
     }
 
+    private void FillForm()
+    {
+        if (_employee is not null)
+        {
+            _post.Text = _employee.Post;
+            _textBoxes[0].Text = _employee.Surname;
+            _textBoxes[1].Text = _employee.Name;
+            _textBoxes[2].Text = _employee.Patronymic;
+            _birthDay.Value = _employee.DateOfBirth;
+            _phoneNumber.Text = _employee.PhoneNumber;
+            _mailAddress.Text = _employee.Mail;
+            _familyStatus.Text = _employee.FamilyStatus;
+            _textBoxes[3].Text = _employee.City;
+            _address.Text = _employee.Address;
+
+            if (_employee.Hobbies is not null)
+            {
+                var result = new StringBuilder();
+
+                foreach (var hobbie in _employee.Hobbies)
+                    result.Append($"{hobbie}, ");
+
+                _hobbies.Text = result.Remove(result.Length - 2, 2).ToString();
+            }
+            else _hobbies.Text = "";
+        }
+    }
+
     private void DrawDividingLine(object sender, PaintEventArgs args)
     {
-        args.Graphics.DrawLine(new Pen(Color.LightGray, 2), new Point(220, 20), new Point(220, 670));
+        args.Graphics.DrawLine(new(Color.LightGray, 2), new(220, 20), new(220, 670));
         args.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+        args.Graphics.Save();
     }
 
     private void CorrectKeyPress(object sender, EventArgs args)
@@ -292,11 +345,11 @@ internal class CreateNewEmployeeForm : Form
                 {
                     keyPress.KeyChar = '\0';
                 }
-                
+
             }
             else
             {
-                if(textBox.Text.Length == STRING_MAX_LENGTH)
+                if (textBox.Text.Length == STRING_MAX_LENGTH)
                 {
                     keyPress.KeyChar = (char)8;
                 }
@@ -393,34 +446,37 @@ internal class CreateNewEmployeeForm : Form
         await Task.CompletedTask;
     }
 
-    private void CreateEmployee(object sender, EventArgs args)
+    private void SaveEmployee(object sender, EventArgs args)
     {
         if (_errorsCounter.Count == 0)
         {
-            var employee = new Employee(
-                _post.Text,
-                _textBoxes[0].Text,
-                _textBoxes[1].Text,
-                _textBoxes[2].Text,
-                _birthDay.Value.Date,
-                _phoneNumber.Text,
-                _mailAddress.Text,
-                _familyStatus.Text,
-                _textBoxes[3].Text,
-                _address.Text,
-                _hobbies.Text is "" ? null :
+            _employee ??= new Employee();
+
+            _employee.Post = _post.Text;
+            _employee.Surname = _textBoxes[0].Text;
+            _employee.Name = _textBoxes[1].Text;
+            _employee.Patronymic = _textBoxes[2].Text;
+            _employee.DateOfBirth = _birthDay.Value.Date;
+            _employee.PhoneNumber = _phoneNumber.Text;
+            _employee.Mail = _mailAddress.Text;
+            _employee.FamilyStatus = _familyStatus.Text;
+            _employee.City = _textBoxes[3].Text;
+            _employee.Address = _address.Text;
+            _employee.Hobbies = _hobbies.Text is "" ? null :
                     _hobbies.Text
                         .Split(',')
                         .Select(s => s.Trim().ToLower())
                         .Where(s => s.Length > 0 && s.Length <= STRING_MAX_LENGTH)
-                        .ToList(),
-                DateTime.Now);
+                        .ToList();
+            if (_isCreate) _employee.CreatedAt = DateTime.Now;
 
-            _dataContext.Employees.Add(employee);
+            if (_isCreate) _dataContext.Employees.Add(_employee);
+            else _dataContext.Employees.Update(_employee);
             _dataContext.SaveChanges();
 
-            MessageBox.Show("Сотрудник добавлен в базу данных", "Сохранение выполнено", MessageBoxButtons.OK,
-                MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, MessageBoxOptions.DefaultDesktopOnly);
+            MessageBox.Show(_isCreate ? "Сотрудник добавлен в базу данных" : "Сотрудник обновлен в базе данных",
+                "Сохранение выполнено", MessageBoxButtons.OK, MessageBoxIcon.Information,
+                MessageBoxDefaultButton.Button1, MessageBoxOptions.DefaultDesktopOnly);
 
             Close();
         }
