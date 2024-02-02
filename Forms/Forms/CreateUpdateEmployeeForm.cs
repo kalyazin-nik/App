@@ -68,7 +68,7 @@ internal class CreateUpdateEmployeeForm : Form
 
     private void CustomizeForm()
     {
-        Text = "Добавление в базу данных";
+        Text = _isCreate ? "Добавление сотрудника в базу данных" : "Изменение информации о сотруднике";
         Size = new (600, 860);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -118,7 +118,7 @@ internal class CreateUpdateEmployeeForm : Form
             },
         ];
 
-        for (int i = 0, y = 30; i < 10; i++, y += 50)
+        for (int i = 0, y = 30; i < BOX_COUNT; i++, y += 50)
             _labels.Add(new() 
             { 
                 Text = "*", 
@@ -468,7 +468,6 @@ internal class CreateUpdateEmployeeForm : Form
                         .Select(s => s.Trim().ToLower())
                         .Where(s => s.Length > 0 && s.Length <= STRING_MAX_LENGTH)
                         .ToList();
-            if (_isCreate) _employee.CreatedAt = DateTime.Now;
 
             if (_isCreate) _dataContext.Employees.Add(_employee);
             else _dataContext.Employees.Update(_employee);

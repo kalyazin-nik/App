@@ -20,8 +20,8 @@ public class DataContext(DbContextOptions<DataContext> options) : DbContext(opti
         {
             modelBuilder.Entity<TEntity>().Property(entityInfo.PropertyName).HasColumnName(entityInfo.ColumnName);
 
-            if(entityInfo.Type is not null)
-                modelBuilder.Entity<TEntity>().Property(entityInfo.PropertyName).HasColumnType(entityInfo.Type);
+            if(entityInfo.ColumnType is not null)
+                modelBuilder.Entity<TEntity>().Property(entityInfo.PropertyName).HasColumnType(entityInfo.ColumnType);
         }
     }
 }

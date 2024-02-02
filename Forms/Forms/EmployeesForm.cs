@@ -152,4 +152,14 @@ internal class EmployeesForm : Form
             _dataGrid["Возраст", i].Value = age;
         }
     }
+
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        base.OnClosing(e);
+        _dataContext.Dispose();
+        _dataGrid.Dispose();
+        _dataContext = null!;
+        _bindingList = null!;
+        _dataGrid = null!;
+    }
 }
